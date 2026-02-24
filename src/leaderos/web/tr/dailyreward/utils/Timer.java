@@ -48,7 +48,8 @@ public class Timer {
 		if (isFolia()) {
 			if (foliaTask != null) {
 				try {
-					foliaTask.getClass().getMethod("cancel").invoke(foliaTask);
+					Class<?> scheduledTaskClass = Class.forName("io.papermc.paper.threadedregions.scheduler.ScheduledTask");
+					scheduledTaskClass.getMethod("cancel").invoke(foliaTask);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -60,13 +61,15 @@ public class Timer {
 						.getMethod("getGlobalRegionScheduler")
 						.invoke(plugin.getServer());
 
-				Object task = scheduledTask.getClass()
-						.getMethod("runAtFixedRate", Plugin.class, java.util.function.Consumer.class, long.class, long.class)
+				Class<?> schedulerClass = Class.forName("io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler");
+				Class<?> scheduledTaskClass = Class.forName("io.papermc.paper.threadedregions.scheduler.ScheduledTask");
+
+				Object task = schedulerClass.getMethod("runAtFixedRate", Plugin.class, java.util.function.Consumer.class, long.class, long.class)
 						.invoke(scheduledTask, plugin, (java.util.function.Consumer<Object>) t -> {
 							if (Timer.hasTime()) {
 								runix();
 								try {
-									t.getClass().getMethod("cancel").invoke(t);
+									scheduledTaskClass.getMethod("cancel").invoke(t);
 								} catch (Exception e) {
 									e.printStackTrace();
 								}
@@ -110,8 +113,9 @@ public class Timer {
 						.getMethod("getGlobalRegionScheduler")
 						.invoke(plugin.getServer());
 
-				scheduler.getClass()
-						.getMethod("runDelayed", Plugin.class, java.util.function.Consumer.class, long.class)
+				Class<?> schedulerClass = Class.forName("io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler");
+
+				schedulerClass.getMethod("runDelayed", Plugin.class, java.util.function.Consumer.class, long.class)
 						.invoke(scheduler, plugin, (java.util.function.Consumer<Object>) task -> taskAgain(), 2000L);
 
 			} catch (Exception e) {
