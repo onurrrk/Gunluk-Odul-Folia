@@ -1,5 +1,6 @@
 # "Streak" or "Casual" rewarding system
 Type: Streak
+ResetOnComplete: false
 debug: false
 forceOpen: true
 rewardSound: "ENTITY_PLAYER_LEVELUP"
