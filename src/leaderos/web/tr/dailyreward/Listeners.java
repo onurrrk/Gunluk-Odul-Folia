@@ -2,7 +2,6 @@ package leaderos.web.tr.dailyreward;
 
 import leaderos.web.tr.dailyreward.database.DatabaseQueries;
 import leaderos.web.tr.dailyreward.utils.*;
-
 import leaderos.web.tr.dailyreward.utils.enums.RequirementType;
 import leaderos.web.tr.dailyreward.utils.objects.*;
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -34,8 +33,11 @@ public class Listeners implements Listener {
 
 			if (plugin.getConfig().getString("Type").equalsIgnoreCase("streak")) {
 				if (!RewardManager.isStreakValid(player.getName(), playerCache)) {
-					DatabaseQueries.resetPlayerStreak(player.getName());
-					playerCache.setStreak(0);
+					boolean resetOnComplete = plugin.getConfig().getBoolean("ResetOnComplete", true);
+					if (resetOnComplete || playerCache.getStreak() < Main.rewards.size()) {
+						DatabaseQueries.resetPlayerStreak(player.getName());
+						playerCache.setStreak(0);
+					}
 				}
 			}
 
@@ -85,8 +87,22 @@ public class Listeners implements Listener {
 
 						cache.setLastTake(formatter.format(time));
 						cache.setLastTakeUnix(unix);
-						cache.setStreak(streak < 6 ? streak + 1 : 0);
+						
+						boolean resetOnComplete = plugin.getConfig().getBoolean("ResetOnComplete", true);
+						int maxStreak = Main.rewards.size() - 1;
+						
+						if (streak < maxStreak) {
+							cache.setStreak(streak + 1);
+						} else {
+							cache.setStreak(resetOnComplete ? 0 : streak + 1);
+						}
+
 						cache.setTotalLoot(cache.getTotalLoot() + 1);
+
+						final String playerName = player.getName();
+						SchedulerUtils.runAsync(plugin, () -> {
+							DatabaseQueries.savePlayerAllCache(playerName);
+						});
 
 						Rewards reward = Main.rewards.get(itemSlot);
 
@@ -125,10 +141,6 @@ public class Listeners implements Listener {
 								Manager.getText("Lang", "Titles.DailyReward"),
 								Manager.getText("Lang", "RewardMsg.takingSuccess"),
 								1, 3, 1);
-
-
-
-
 
 						player.playSound(player.getLocation(), Sound.valueOf(plugin.getConfig().getString("rewardSound")), 0.1F, 0.1F);
 
